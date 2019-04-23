@@ -256,7 +256,7 @@ PrintErrors(void)
     /*  8,9  */ "\")\" inserted",               "\"{\" inserted",
     /* 10,11 */ "\"}\" inserted",               "EOF inserted",
     /* 12,13 */ "relop inserted",               "number inserted",
-    /* 14,15 */ "should be \"==\"",             "symbol deleted",
+    /* 14,15 */ "changed to \"==\"",            "symbol deleted",
     /* 16,17 */ "not a type",                   "not a variable",
     /* 18,19 */ "not a function",               "not \"main\" package",
     /* 20,21 */ "assignment to non-variable",   "lookup failed",
@@ -1085,42 +1085,55 @@ Interpret(void)
   } while (p != 0);
 }
 
-int
-main(int argc, char *argv[])
+static int
+Run(void)
 {
+  int sc;
+
+  assert(g_src != NULL);
+
   /* Initialize symbol table with a predeclared identifier for the int type */
   g_table[g_tx].kind = kType;
   strcpy(g_table[g_tx].name, "int");
   ++g_tx;
 
-  /* Compile source file */
-  if (argc == 1) {
-    g_src = stdin;
-    SourceFile();
-  } else if (argc == 2) {
-    if ((g_src = fopen(argv[1], "r")) == NULL) {
-      perror(argv[0]);
-      return 1;
-    }
-    SourceFile();
-    if (fclose(g_src) == EOF) {
-      perror(argv[0]);
-      return 1;
-    }
-  } else {
-    fprintf(stderr, "%s: too many arguments\n", argv[0]);
-    return 1;
-  }
-
-  /* Output assembly */
+  /* Compile and list assembly */
+  SourceFile();
   ListCode();
 
   /* Run interpreter if no compilation errors were encountered */
-  if (g_errs != 0) {
+  if ((sc = g_errs != 0)) {
     printf("  errors in source file\n");
     PrintErrors();
-    return 1;
+  } else {
+    Interpret();
+    printf("  end go/0\n");
   }
-  Interpret();
-  printf("  end go/0\n");
+
+  /* 0 indicates success, 1 failure */
+  return sc;
+}
+
+int
+main(int argc, char *argv[])
+{
+  int sc = 1;
+
+  if (argc == 1) {
+    g_src = stdin;
+    sc = Run();
+  } else if (argc == 2) {
+    if ((g_src = fopen(argv[1], "r")) != NULL) {
+      sc = Run();
+      if (fclose(g_src) == EOF) {
+        perror(argv[0]);
+      }
+    } else {
+      perror(argv[0]);
+    }
+  } else {
+    fprintf(stderr, "%s: too many arguments\n", argv[0]);
+  }
+
+  return sc;
 }
