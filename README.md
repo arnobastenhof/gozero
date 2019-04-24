@@ -45,6 +45,6 @@ In keeping with the source material, we have kept the program to a single file.
 Thus, simply invoking `gcc gozero.c` or `clang gozero.c` (for GCC or Clang)
 should result in an executable `a.out`. Subsequently running
 ```
-a.out test.go
+./a.out test.go
 ```
 tests the compiler on a sample program adapted from Wirth's treatise on PL/0.
